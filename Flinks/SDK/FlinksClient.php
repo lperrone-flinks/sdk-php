@@ -10,6 +10,7 @@ require_once "../Model/AuthorizeResult.php";
 require_once "../Model/AccountsSummaryResult.php";
 require_once "../Model/DaysOfTransactions.php";
 require_once "../Model/AccountsDetailResult.php";
+require_once "../Model/GetStatementsResult.php";
 
 //use Flinks\AuthorizeRequestBody;
 use Exception;
@@ -354,6 +355,53 @@ class FlinksClient
         return $apiResponse;
     }
 
+    public function GetStatements(string $requestId, string $numberOfStatements, array $accountsFilter = null, string $secret_key): GetStatementsResult
+    {
+        if (!($this->IsClientStatusAuthorized()))
+        {
+            throw new Exception("You can't call GetStatements when the ClientStatus is not Authorized, your current status is: {$this->GetClientStatus()}.");
+        }
+
+        $client = new Client([
+            'base_uri' => $this->BaseUrl,
+        ]);
+
+        $response = $client->request('POST', EndpointConstant::GetStatements, [
+            "headers" => [
+                'flinks-auth-key' => $secret_key
+            ],
+            'json' => [
+                "RequestId" => $requestId,
+                "NumberOfStatements" => $numberOfStatements,
+                "AccountsFilter" => $accountsFilter
+            ],
+            "http_errors" => false
+        ]);
+
+        $this->SetClientStatus($response->getStatusCode());
+        $decoded_response = $this->DecodeResponse($response);
+
+        if($decoded_response["HttpStatusCode"] == 200)
+        {
+            $apiResponse = new GetStatementsResult(null, null, $decoded_response["HttpStatusCode"], $decoded_response["StatementsByAccount"],
+                $decoded_response["Login"], $decoded_response["Institution"], null, $decoded_response["RequestId"]);
+        }
+
+        if($decoded_response["HttpStatusCode"] == 202)
+        {
+            $apiResponse = new GetStatementsResult($decoded_response["FlinksCode"], $decoded_response["Links"], $decoded_response["HttpStatusCode"],
+                null, null, null,  $decoded_response["Message"], $decoded_response["RequestId"]);
+        }
+        if($decoded_response["HttpStatusCode"] == 400)
+        {
+            $apiResponse = new GetStatementsResult($decoded_response["FlinksCode"], null, $decoded_response["HttpStatusCode"],
+                null, null, null, $decoded_response["Message"], null);
+        }
+
+        return $apiResponse;
+
+    }
+
     //Helper functions
     private function GetBaseUrl(): string
     {
@@ -400,18 +448,21 @@ class FlinksClient
 }
 
 //build to tests
-/*new FlinksClient("","");
+new FlinksClient("","");
 print("\n");
 //Authorize with a 203 status code response
 $client1 = new FlinksClient("43387ca6-0391-4c82-857d-70d95f087ecb", "toolbox");
 $response_203 = $client1->Authorize("FlinksCapital", "Greatday", "Everyday", false, true);
 print_r($response_203);
 print("\n");
+
 //Authorize with a 200 status code response
 $client2 = new FlinksClient("43387ca6-0391-4c82-857d-70d95f087ecb", "toolbox");
 $response1 = $client2->Authorize("FlinksCapital", "Greatday", "Everyday", true, true);
 print_r($response1);
 print("\n");
+print("--------------------------------\n");
+
 //AuthorizeWithLoginId with a 200 status code response
 $array_login = (array) $response1->getLogin();
 $response2 = $client2->AuthorizeWithLoginId($array_login["Id"]);
@@ -429,9 +480,10 @@ print_r($response4);
 //GetAccountsSummaryAsync with a 200 status code response
 $response5 = $client2->GetAccountsSummaryAsync($requestId);
 print_r($response5);
+
 //GetAccountsDetail with a 200 status code response
 $response6 = $client2->GetAccountsDetail($requestId);
 print_r($response6);
 //GetAccountsDetailAsync with a 200 status code response
 $response7 = $client2->GetAccountsDetailAsync($requestId);
-print_r($response7);*/
+print_r($response7);
