@@ -355,7 +355,7 @@ class FlinksClient
         return $apiResponse;
     }
 
-    public function GetStatements(string $requestId, string $numberOfStatements, array $accountsFilter = null, string $secret_key): GetStatementsResult
+    public function GetStatements(string $requestId, string $numberOfStatements = null, array $accountsFilter = null, string $secret_key = null): GetStatementsResult
     {
         if (!($this->IsClientStatusAuthorized()))
         {
@@ -450,12 +450,14 @@ class FlinksClient
 //build to tests
 new FlinksClient("","");
 print("\n");
+
+/*
 //Authorize with a 203 status code response
 $client1 = new FlinksClient("43387ca6-0391-4c82-857d-70d95f087ecb", "toolbox");
 $response_203 = $client1->Authorize("FlinksCapital", "Greatday", "Everyday", false, true);
 print_r($response_203);
 print("\n");
-
+*/
 //Authorize with a 200 status code response
 $client2 = new FlinksClient("43387ca6-0391-4c82-857d-70d95f087ecb", "toolbox");
 $response1 = $client2->Authorize("FlinksCapital", "Greatday", "Everyday", true, true);
