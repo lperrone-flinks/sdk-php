@@ -355,12 +355,9 @@ class FlinksClient
         return $apiResponse;
     }
 
-    public function GetStatements(string $requestId, string $numberOfStatements = null, array $accountsFilter = null, string $secret_key = null): GetStatementsResult
+    public function GetStatements(string $requestId, ?string $numberOfStatements, string $secret_key, array $accountsFilter = null): GetStatementsResult
     {
-        if (!($this->IsClientStatusAuthorized()))
-        {
-            throw new Exception("You can't call GetStatements when the ClientStatus is not Authorized, your current status is: {$this->GetClientStatus()}.");
-        }
+        $this->IsGetStatementValid($numberOfStatements, $accountsFilter);
 
         $client = new Client([
             'base_uri' => $this->BaseUrl,
@@ -403,6 +400,23 @@ class FlinksClient
     }
 
     //Helper functions
+    private function IsGetStatementValid(?string $numberOfStatements, ?array $accountsFilter)
+    {
+        if ($numberOfStatements !=null && $numberOfStatements::months12)
+        {
+            if ($accountsFilter == null)
+            {
+                throw new Exception("When using NumberOfStatements as Months12, the accounts filter can't be null.");
+            }
+
+            if ($accountsFilter["count"] == 0 || $accountsFilter["count"] >= 2)
+            {
+                throw new Exception("When using NumberOfStatements as Months12, you have to provide a single accountId on accountsFilter.");
+            }
+        }
+    }
+
+
     private function GetBaseUrl(): string
     {
         $endpoint = new EndpointConstant();
@@ -489,3 +503,6 @@ print_r($response6);
 //GetAccountsDetailAsync with a 200 status code response
 $response7 = $client2->GetAccountsDetailAsync($requestId);
 print_r($response7);
+
+$response8 = $client2->GetStatements($requestId, "MostRecent", "TheSecretKey" );
+print_r($response8);
