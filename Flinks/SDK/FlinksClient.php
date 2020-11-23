@@ -11,6 +11,7 @@ require_once "../Model/AccountsSummaryResult.php";
 require_once "../Model/DaysOfTransactions.php";
 require_once "../Model/AccountsDetailResult.php";
 require_once "../Model/GetStatementsResult.php";
+require_once "../Model/DeleteCardResult.php";
 
 //use Flinks\AuthorizeRequestBody;
 use Exception;
@@ -399,6 +400,39 @@ class FlinksClient
 
     }
 
+    Public function DeleteCardResult(string $loginId): DeleteCardResult
+    {
+        $client = new Client([
+            'base_uri' => $this->BaseUrl,
+        ]);
+
+        $response = $client->request('DELETE', EndpointConstant::DeleteCard . "/" . $loginId, [
+            "headers" => [
+                "Content-Type" => "application/json"
+            ],
+            'json' => [
+                "LoginId" => $loginId
+            ],
+            "http_errors" => false
+        ]);
+
+        $this->SetClientStatus($response->getStatusCode());
+
+        $decoded_response = $this->DecodeResponse($response);
+
+        if($decoded_response["StatusCode"] == 200)
+        {
+            $apiResponse = new DeleteCardResult($decoded_response["StatusCode"], null, null, $decoded_response["Message"], null);
+        }
+
+        if($decoded_response["HttpStatusCode"] == 400)
+        {
+            $apiResponse = new DeleteCardResult(null, $decoded_response["HttpStatusCode"], null, $decoded_response["Message"], $decoded_response["FlinksCode"]);
+        }
+
+        return $apiResponse;
+    }
+
     //Helper functions
     private function IsGetStatementValid(?string $numberOfStatements, ?array $accountsFilter)
     {
@@ -471,7 +505,7 @@ $client1 = new FlinksClient("43387ca6-0391-4c82-857d-70d95f087ecb", "toolbox");
 $response_203 = $client1->Authorize("FlinksCapital", "Greatday", "Everyday", false, true);
 print_r($response_203);
 print("\n");
-*/
+
 //Authorize with a 200 status code response
 $client2 = new FlinksClient("43387ca6-0391-4c82-857d-70d95f087ecb", "toolbox");
 $response1 = $client2->Authorize("FlinksCapital", "Greatday", "Everyday", true, true);
@@ -506,3 +540,5 @@ print_r($response7);
 
 $response8 = $client2->GetStatements($requestId, "MostRecent", "TheSecretKey" );
 print_r($response8);
+
+*/
